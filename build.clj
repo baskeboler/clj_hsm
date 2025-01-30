@@ -22,7 +22,8 @@
 (ns build
   (:require
    [clojure.tools.build.api :as build-api]
-   [clojure.pprint :as pprint]))
+   [clojure.pprint :as pprint]
+   [deps-deploy.deps-deploy :as dd]))
 
 ;; ---------------------------------------------------------
 ;; Project configuration
@@ -30,8 +31,10 @@
 (def project-config
   "Project configuration to support all tasks"
   {:class-directory "target/classes"
-   :main-namespace  'baskeboler/clj-hsm
+   :main-namespace  'io.github.baskeboler/clj-hsm
    :project-basis   (build-api/create-basis)
+   :version         "0.0.1-SNAPSHOT"
+   :jar-file        "target/baskeboler-clj-hsm.jar"
    :uberjar-file    "target/baskeboler-clj-hsm-standalone.jar"})
 
 (defn config
@@ -56,26 +59,61 @@
    (not (contains? #{"." "/"} directory))
     (build-api/delete {:path (or (:path directory) "target")})))
 
-
+(defn compile-clj
+  "Compile the project"
+  [options]
+  (let [config (merge project-config options)
+        {:keys [class-directory]} config]
+    (build-api/copy-dir {:src-dirs   ["src" "resources"]
+                         :target-dir class-directory})
+    (build-api/compile-clj {:basis     (:project-basis config)
+                            :class-dir class-directory
+                            :src-dirs  ["src"]})))
 (defn uberjar
   "Create an archive containing Clojure and the build of the project
   Merge command line configuration to the default project config"
   [options]
   (let [config (merge project-config options)
-        {:keys [class-directory main-namespace project-basis uberjar-file]} config]
+        {:keys [class-directory version lib
+                main-namespace project-basis 
+                uberjar-file]} config]
     (clean "target")
-    (build-api/copy-dir {:src-dirs   ["src" "resources"]
-                         :target-dir class-directory})
-
-    (build-api/compile-clj {:basis     project-basis
-                            :class-dir class-directory
-                            :src-dirs  ["src"]})
-
+    (compile-clj options)
     (build-api/uber {:basis     project-basis
                      :class-dir class-directory
                      :main      main-namespace
                      :uber-file uberjar-file})))
+(defn jar 
+  "Create a jar file from the project"
+  [options]
+  (let [config (merge project-config options)
+        {:keys [class-directory jar-file]} config]
+    (clean "target")
+    (compile-clj options)
+    (build-api/jar {:basis     (:project-basis config)
+                    :class-dir class-directory
+                    :jar-file  jar-file})))
 
+(defn deploy 
+  "Deploy the project to a remote repository"
+  [options]
+  (let [config (merge project-config options)
+        {:keys [jar-file]} config]
+    (clean "target")
+    (jar config)
+    (dd/deploy {:installer :remote
+                :sign-releases? false
+                :artifact jar-file})))
+
+(defn install 
+  "Install the project to a local repository"
+  [options]
+  (let [config (merge project-config options)
+        {:keys [jar-file]} config]
+    (clean "target")
+    (jar config)
+    (dd/deploy {:installer :local
+                :artifact jar-file})))
 ;; End of Build tasks
 ;; ---------------------------------------------------------
 
