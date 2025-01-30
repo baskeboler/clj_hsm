@@ -2,8 +2,9 @@
   (:require [baskeboler.hsm.protocol :as protocol]
             [baskeboler.hsm.impl :as impl]))
 
-
-
-(defn ^:export create-hms []
+(refer 'baskeboler.hsm.protocol)
+(defn ^:export create-hms 
+  "Create an instance of Hms"  
+  []
   (let [hms (impl/->Hms nil {})]
     (protocol/init hms)))
