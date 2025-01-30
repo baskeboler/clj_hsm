@@ -10,7 +10,7 @@
   <name>clj-hsm</name>
   <scm>
     <url>
-    https://github.com/baskeboler/clj-hsm
+    https://github.com/baskeboler/clj_hsm
     </url>
   </scm>
   <dependencies>
