@@ -1,6 +1,6 @@
 (ns baskeboler.hsm.impl
   (:require [baskeboler.hsm.protocol :as protocol])
-  (:import [java.security KeyStore]
+  (:import 
            [javax.crypto KeyGenerator Cipher SecretKeyFactory]
            [javax.crypto.spec DESedeKeySpec]))
 
@@ -57,7 +57,7 @@
           (assoc-in [:registered-keys alias] k))))
 
   (protocol/generate-key
-    [this]
+    [_this]
     (let [k (generate-key*)]
       (.getEncoded k)))
 

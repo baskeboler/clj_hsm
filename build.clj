@@ -31,7 +31,6 @@
 (def project-config
   "Project configuration to support all tasks"
   {:class-directory "target/classes"
-   :main-namespace  'io.github.baskeboler/clj-hsm
    :project-basis   (build-api/create-basis)
    :version         "0.0.1-SNAPSHOT"
    :jar-file        "target/baskeboler-clj-hsm.jar"
