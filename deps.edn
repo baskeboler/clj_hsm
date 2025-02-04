@@ -9,7 +9,7 @@
  :aliases
  {:mvn/artifact-id clj-hsm
   :mvn/group-id    io.github.baskeboler
-  :mvn/version     "0.0.1-SNAPSHOT"
+  :mvn/version     "0.0.1"
   :jar/file-name   "clj_hsm.jar"
 
   :deploy {:extra-deps {slipset/deps-deploy {:mvn/version "0.2.2"}}

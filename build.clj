@@ -32,7 +32,7 @@
   "Project configuration to support all tasks"
   {:class-directory "target/classes"
    :project-basis   (build-api/create-basis)
-   :version         "0.0.1-SNAPSHOT"
+   :version         "0.0.1"
    :jar-file        "target/baskeboler-clj-hsm.jar"
    :uberjar-file    "target/baskeboler-clj-hsm-standalone.jar"})
 
