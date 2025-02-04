@@ -1,8 +1,10 @@
 (ns baskeboler.hsm.impl
-  (:require [baskeboler.hsm.protocol :as protocol])
-  (:import 
-           [javax.crypto KeyGenerator Cipher SecretKeyFactory]
-           [javax.crypto.spec DESedeKeySpec]))
+  (:require
+   [baskeboler.hsm.protocol :as protocol])
+  (:import
+   [java.time Instant]
+   [javax.crypto Cipher KeyGenerator SecretKeyFactory]
+   [javax.crypto.spec DESedeKeySpec SecretKeySpec]))
 
 (comment
   (def keygen (KeyGenerator/getInstance "DESede"))
@@ -19,6 +21,14 @@
      (doFinal (.getBytes "hey there dude"))))
 
 
+(comment
+  (def keygen (KeyGenerator/getInstance "AES"))
+  (def secret-key (.. keygen (generateKey)))
+  (def key-bytes (.getEncoded secret-key))
+  (def key-spec (SecretKeySpec. key-bytes "AES"))
+  (def key-factory (SecretKeyFactory/getInstance "AES/ECB/PKCS5Padding"))
+  (.. key-factory (generateSecret key-spec) (getEncoded)))
+
 
 (defn- bytes->key [kbytes]
   (let [spec      (DESedeKeySpec. kbytes)
@@ -30,6 +40,18 @@
         secret-key (.generateKey keygen)]
     secret-key))
 
+(defn- bytes->hex
+  "Converts a byte array to a hex string"
+  [bytes]
+  (apply str (map #(format "%02x" %) bytes)))
+
+(defn- hex->bytes 
+  "Converts a hex string to a byte array"
+  [hex]
+  (let [bytes (byte-array (/ (count hex) 2))]
+    (dotimes [i (/ (count hex) 2)]
+      (aset bytes i (Integer/parseInt (subs hex (* i 2) (+ (* i 2) 2)) 16)))
+    bytes))
 
 (defn- transform-key [kbytes mkey]
   (let [cipher        (Cipher/getInstance "DESede/ECB/PKCS5Padding")
@@ -43,10 +65,12 @@
   (init
     [this]
     (-> this
-        (assoc :master-key (generate-key*))))
+        (assoc :master-key (generate-key*)
+               :created (Instant/now))))
   (init [this mkey]
     (let [k (bytes->key mkey)]
-      (-> this (assoc :master-key k))))
+      (-> this (assoc :master-key k
+                      :created (Instant/now)))))
 
   (protocol/import-key
     [this kbytes alias]
@@ -68,9 +92,8 @@
       (.init cipher Cipher/ENCRYPT_MODE new-key)
       (.doFinal cipher data)))
   (protocol/decrypt
-   [this kbytes data]
-   (let [cipher        (Cipher/getInstance "DESede/ECB/PKCS5Padding")
-         new-key       (transform-key kbytes (:master-key this))
-         ]
-     (.init cipher Cipher/DECRYPT_MODE new-key)
-     (.doFinal cipher data))))
+    [this kbytes data]
+    (let [cipher        (Cipher/getInstance "DESede/ECB/PKCS5Padding")
+          new-key       (transform-key kbytes (:master-key this))]
+      (.init cipher Cipher/DECRYPT_MODE new-key)
+      (.doFinal cipher data))))
